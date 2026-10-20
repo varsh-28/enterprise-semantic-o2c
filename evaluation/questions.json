@@ -1,0 +1,32 @@
+[
+  {
+    "question": "Which invoices are overdue?",
+    "expected_ids": [
+      "INV-9002",
+      "INV-9004"
+    ]
+  },
+  {
+    "question": "Which deliveries are delayed?",
+    "expected_ids": [
+      "D-502",
+      "D-503"
+    ]
+  },
+  {
+    "question": "Show invoices and their orders",
+    "expected_ids": [
+      "INV-9001",
+      "SO-1001",
+      "INV-9002",
+      "SO-1002"
+    ]
+  },
+  {
+    "question": "Show customer orders",
+    "expected_ids": [
+      "C100",
+      "SO-1001"
+    ]
+  }
+]

@@ -1,0 +1,4 @@
+payment_id,invoice_id,status,amount,paid_date,source_system,source_record_id
+PAY-7001,INV-9001,received,12500.00,2026-10-11,SAP,SAP-PAY-7001
+PAY-7002,INV-9002,pending,0.00,,ServiceNow,SN-PAY-7002
+PAY-7003,INV-9004,pending,0.00,,ServiceNow,SN-PAY-7004

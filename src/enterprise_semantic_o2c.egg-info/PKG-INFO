@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: enterprise-semantic-o2c
+Version: 1.0.0
+Summary: Enterprise Order-to-Cash semantic layer with RDF, SHACL, SPARQL, FAISS and FastAPI
+Requires-Python: >=3.10

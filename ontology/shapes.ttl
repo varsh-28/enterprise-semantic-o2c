@@ -1,0 +1,27 @@
+@prefix o2c: <https://example.org/o2c#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+o2c:CustomerShape a sh:NodeShape ;
+  sh:targetClass o2c:Customer ;
+  sh:property [ sh:path o2c:externalId ; sh:minCount 1 ; sh:datatype xsd:string ] ;
+  sh:property [ sh:path o2c:name ; sh:minCount 1 ; sh:datatype xsd:string ] .
+
+o2c:OrderShape a sh:NodeShape ;
+  sh:targetClass o2c:SalesOrder ;
+  sh:property [ sh:path o2c:externalId ; sh:minCount 1 ; sh:datatype xsd:string ] ;
+  sh:property [ sh:path o2c:hasCustomer ; sh:minCount 1 ; sh:class o2c:Customer ] ;
+  sh:property [ sh:path o2c:status ; sh:minCount 1 ; sh:datatype xsd:string ] .
+
+o2c:DeliveryShape a sh:NodeShape ;
+  sh:targetClass o2c:Delivery ;
+  sh:property [ sh:path o2c:externalId ; sh:minCount 1 ; sh:datatype xsd:string ] ;
+  sh:property [ sh:path o2c:hasOrder ; sh:minCount 1 ; sh:class o2c:SalesOrder ] ;
+  sh:property [ sh:path o2c:plannedDate ; sh:minCount 1 ; sh:datatype xsd:date ] .
+
+o2c:InvoiceShape a sh:NodeShape ;
+  sh:targetClass o2c:Invoice ;
+  sh:property [ sh:path o2c:externalId ; sh:minCount 1 ; sh:datatype xsd:string ] ;
+  sh:property [ sh:path o2c:forOrder ; sh:minCount 1 ; sh:class o2c:SalesOrder ] ;
+  sh:property [ sh:path o2c:dueDate ; sh:minCount 1 ; sh:datatype xsd:date ] ;
+  sh:property [ sh:path o2c:amount ; sh:minCount 1 ; sh:datatype xsd:decimal ] .

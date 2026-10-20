@@ -1,0 +1,5 @@
+order_id,customer_id,status,amount,source_system,source_record_id,description
+SO-1001,C100,confirmed,12500.00,SAP,SAP-SO-1001,Industrial valves replenishment
+SO-1002,C200,shipped,8400.00,SAP,SAP-SO-1002,Retail distribution order
+SO-1003,C300,processing,22500.00,Salesforce,SF-OPP-300,Replacement equipment
+SO-1004,C400,confirmed,3100.00,SAP,SAP-SO-1004,Maintenance parts

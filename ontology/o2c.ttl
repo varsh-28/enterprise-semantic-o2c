@@ -1,0 +1,42 @@
+@prefix o2c: <https://example.org/o2c#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://example.org/o2c> a owl:Ontology ;
+  rdfs:label "Order-to-Cash Enterprise Semantic Layer" ;
+  rdfs:comment "A compact semantic model for customers, sales orders, deliveries, invoices and payments." .
+
+o2c:BusinessEntity a owl:Class .
+o2c:Customer a owl:Class ; rdfs:subClassOf o2c:BusinessEntity ; skos:prefLabel "Customer" .
+o2c:SalesOrder a owl:Class ; rdfs:subClassOf o2c:BusinessEntity ; skos:prefLabel "Sales order" .
+o2c:Delivery a owl:Class ; rdfs:subClassOf o2c:BusinessEntity ; skos:prefLabel "Delivery" .
+o2c:Invoice a owl:Class ; rdfs:subClassOf o2c:BusinessEntity ; skos:prefLabel "Invoice" .
+o2c:Payment a owl:Class ; rdfs:subClassOf o2c:BusinessEntity ; skos:prefLabel "Payment" .
+o2c:SourceRecord a owl:Class ; skos:prefLabel "Source record" .
+
+o2c:hasCustomer a owl:ObjectProperty ; rdfs:domain o2c:SalesOrder ; rdfs:range o2c:Customer .
+o2c:hasOrder a owl:ObjectProperty ; rdfs:domain o2c:Delivery ; rdfs:range o2c:SalesOrder .
+o2c:forOrder a owl:ObjectProperty ; rdfs:domain o2c:Invoice ; rdfs:range o2c:SalesOrder .
+o2c:forInvoice a owl:ObjectProperty ; rdfs:domain o2c:Payment ; rdfs:range o2c:Invoice .
+o2c:hasSourceRecord a owl:ObjectProperty ; rdfs:range o2c:SourceRecord .
+
+o2c:externalId a owl:DatatypeProperty .
+o2c:name a owl:DatatypeProperty .
+o2c:status a owl:DatatypeProperty .
+o2c:amount a owl:DatatypeProperty ; rdfs:range xsd:decimal .
+o2c:dueDate a owl:DatatypeProperty ; rdfs:range xsd:date .
+o2c:paidDate a owl:DatatypeProperty ; rdfs:range xsd:date .
+o2c:plannedDate a owl:DatatypeProperty ; rdfs:range xsd:date .
+o2c:actualDate a owl:DatatypeProperty ; rdfs:range xsd:date .
+o2c:sourceSystem a owl:DatatypeProperty .
+o2c:sourceRecordId a owl:DatatypeProperty .
+o2c:description a owl:DatatypeProperty .
+
+o2c:possibleMatch a owl:ObjectProperty ;
+    rdfs:label "possible customer match" ;
+    rdfs:comment "Links customer records that may refer to the same entity; does not assert identity." ;
+    rdfs:domain o2c:Customer ;
+    rdfs:range o2c:Customer .

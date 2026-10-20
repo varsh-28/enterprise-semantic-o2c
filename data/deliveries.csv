@@ -1,0 +1,5 @@
+delivery_id,order_id,status,planned_date,actual_date,source_system,source_record_id
+D-501,SO-1001,delivered,2026-10-03,2026-10-03,ServiceNow,SN-DEL-501
+D-502,SO-1002,delayed,2026-10-08,,ServiceNow,SN-INC-502
+D-503,SO-1003,in_transit,2026-10-16,,ServiceNow,SN-DEL-503
+D-504,SO-1004,delivered,2026-10-10,2026-10-12,ServiceNow,SN-DEL-504

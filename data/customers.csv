@@ -1,0 +1,5 @@
+customer_id,name,source_system,source_record_id
+C100,Northwind Components,SAP,SAP-CUST-100
+C200,Blue Yonder Retail,Salesforce,SF-ACCT-200
+C300,Contoso Industrial,Salesforce,SF-ACCT-300
+C400,Fabrikam Services,SAP,SAP-CUST-400
