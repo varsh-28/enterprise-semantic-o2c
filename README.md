@@ -1,6 +1,6 @@
 # Enterprise Semantic Layer for Order-to-Cash (O2C)
 
-A runnable portfolio project that unifies synthetic SAP-, Salesforce-, and ServiceNow-style order-to-cash records in an RDF knowledge graph, validates the graph with SHACL, retrieves evidence with sentence embeddings + FAISS, answers questions with constrained SPARQL, and compares the grounded agent with a plain-RAG baseline.
+A runnable portfolio project that unifies synthetic SAP-, Salesforce-, and ServiceNow-style order-to-cash records in an RDF knowledge graph, validates the graph with SHACL, retrieves evidence with sentence embeddings + FAISS, answers questions with constrained SPARQL, and compares the grounded agent with a plain-RAG baseline. An optional Neo4j backend loads the same records into a property graph and answers supported questions with safe, template-based Cypher.
 
 ## What is included
 
@@ -10,6 +10,7 @@ A runnable portfolio project that unifies synthetic SAP-, Salesforce-, and Servi
 - **ETL + graph:** source mapping and RDF graph construction in `src/o2c/graph.py`
 - **Semantic retrieval:** sentence-transformers embeddings and FAISS in `src/o2c/retrieval.py`
 - **Question answering:** safe, template-constrained SPARQL agent with traceable evidence in `src/o2c/agent.py`
+- **Optional property graph:** Neo4j loader, read-only Cypher templates, and query safety checks in `src/o2c/neo4j_store.py`, `src/o2c/cypher_agent.py`, and `src/o2c/cypher_safety.py`
 - **Baseline:** embedding-based plain-RAG answerer for comparison in `src/o2c/baseline.py`
 - **API:** FastAPI endpoints in `src/o2c/api.py`
 - **Evaluation:** labeled questions and simple groundedness/answer-match metrics in `evaluation/`
@@ -60,6 +61,44 @@ uvicorn o2c.api:app --reload
 
 Open `http://127.0.0.1:8000/docs`.
 
+### Optional Neo4j backend
+
+The RDF/SPARQL backend works without Neo4j. To enable the additional Cypher endpoint, install and start Docker, then run the Neo4j service from the project root. Set a strong Neo4j password in your shell first; it must be at least 8 characters. Do not commit passwords or other secrets.
+
+Windows PowerShell:
+
+```powershell
+$env:NEO4J_PASSWORD = "replace-with-a-strong-password"
+docker compose up -d neo4j
+python scripts/load_neo4j.py
+$env:O2C_ENABLE_NEO4J = "1"
+uvicorn o2c.api:app --reload
+```
+
+macOS/Linux:
+
+```bash
+export NEO4J_PASSWORD="replace-with-a-strong-password"
+docker compose up -d neo4j
+python scripts/load_neo4j.py
+export O2C_ENABLE_NEO4J=1
+uvicorn o2c.api:app --reload
+```
+
+The defaults connect to `bolt://localhost:7687` with user `neo4j` and database `neo4j`. To use a different connection, set `NEO4J_URI`, `NEO4J_USER`, and `NEO4J_DATABASE` in the same shell before running the loader and API. The `NEO4J_PASSWORD` variable must also be set for both commands. `docker compose up` uses that password to configure the Neo4j container.
+
+> **Warning:** `python scripts/load_neo4j.py` clears all existing nodes and relationships in the configured Neo4j database before loading the project data. Use a dedicated development database; do not point it at data you need to preserve.
+
+With Neo4j enabled and loaded, send questions to `POST /ask/cypher`. For example:
+
+```bash
+curl -X POST http://127.0.0.1:8000/ask/cypher \
+  -H "Content-Type: application/json" \
+  -d "{\"question\":\"Which invoices are overdue?\"}"
+```
+
+The endpoint supports the same intent templates as the SPARQL agent, including overdue invoices, delayed deliveries, and customer overdue exposure. It returns the query under `cypher` and includes traceable evidence. Cypher execution is read-only, limited to the known graph labels and relationships, capped at 200 rows, and uses a 5-second transaction timeout. Without `O2C_ENABLE_NEO4J=1`, the endpoint responds with HTTP 503.
+
 ### Example API calls
 
 ```bash
@@ -86,20 +125,21 @@ CSV records (SAP / Salesforce / ServiceNow style)
                 |
           SHACL validation
                 |
-       +--------+---------+
-       |                  |
-       v                  v
- SPARQL business      Text evidence chunks
- queries              sentence embeddings
-       |                  |
-       v                  v
- Traceable answer     FAISS similarity search
-       |                  |
-       +--------+---------+
-                v
-           FastAPI /ask
-                |
-        evaluation vs plain RAG
+       +--------+---------+-----------------------+
+       |                  |                       |
+       v                  v                       v
+ SPARQL business     Text evidence chunks    Optional Neo4j
+ queries             sentence embeddings    property graph
+       |                  |                       |
+       v                  v                       v
+ RDF answer          FAISS retrieval         Safe Cypher
+       |                  |                  templates
+       +--------+---------+-----------------------+
+                         |
+                         v
+                FastAPI /ask, /ask/cypher
+                         |
+                 evaluation vs plain RAG
 ```
 
 ## Important design choices
@@ -107,8 +147,9 @@ CSV records (SAP / Salesforce / ServiceNow style)
 1. **Synthetic data only.** The source files are fictional examples, not actual SAP/Salesforce/ServiceNow exports.
 2. **Explainability.** Answers include source entity IDs and evidence records.
 3. **SPARQL safety.** User text maps to a small set of supported query intents. The API does not run arbitrary SPARQL from user input.
-4. **Offline fallback.** If `sentence-transformers` or FAISS cannot be installed on a platform, use `retrieval_mode="lexical"` in `.env` or run tests that don't require the optional retrieval stack. The main requirements include both libraries for the intended full experience.
+4. **Offline fallback.** If `sentence-transformers` or FAISS cannot be installed on a platform, use `retrieval_mode="lexical"` when creating `O2CService`, or run tests that don't require the optional retrieval stack. The main requirements include both libraries for the intended full experience.
 5. **Evaluation honesty.** `evaluation/run_eval.py` reports exact expected-ID match and answer coverage for a small illustrative dataset; it is a smoke-test benchmark, not a statistically significant research result.
+6. **Cypher safety.** The optional Neo4j agent executes fixed query templates, validates labels and relationships, enforces a result limit, and uses a read-only database session. It does not execute arbitrary Cypher from user input.
 
 ## Extend to real LLM-generated SPARQL
 
@@ -130,7 +171,6 @@ enterprise_semantic_o2c/
 ├── scripts/
 ├── src/o2c/
 ├── tests/
-├── .env.example
 ├── pyproject.toml
 └── requirements.txt
 ```
