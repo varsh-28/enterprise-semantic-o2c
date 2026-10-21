@@ -24,6 +24,18 @@ def health():
             "shacl_conforms": service.validation["conforms"],
             "retrieval_mode": service.retriever.mode}
 
+@app.post("/ask/cypher")
+def ask_cypher(request: AskRequest):
+    agent = get_service().cypher_agent
+    if agent is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Neo4j backend disabled. Set O2C_ENABLE_NEO4J=1 and run scripts/load_neo4j.py.",
+        )
+    try:
+        return agent.ask(request.question)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Question processing failed: {type(exc).__name__}")
 @app.get("/validation")
 def validation():
     return get_service().validation
