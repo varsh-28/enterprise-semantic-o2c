@@ -16,8 +16,14 @@ def _ids(result):
     return found
 
 
-def _correct(expected, result):
-    return expected.issubset(_ids(result)) if expected else bool(result["results"])
+def _correct(expected, result, expected_intent=None, expected_result_count=None):
+    if expected_intent is not None and result.get("intent") != expected_intent:
+        return False
+    if expected and not expected.issubset(_ids(result)):
+        return False
+    if expected_result_count is not None:
+        return len(result["results"]) == expected_result_count
+    return bool(expected) or bool(result["results"])
 
 
 def _query_ms(agent, question):
@@ -39,14 +45,19 @@ def run_evaluation(service):
     for item in dataset:
         q = item["question"]
         expected = set(item.get("expected_ids", []))
+        expected_intent = item.get("expected_intent")
+        expected_result_count = item.get("expected_result_count")
 
         result = service.agent.ask(q)
-        correct = _correct(expected, result)
+        correct = _correct(
+            expected, result, expected_intent, expected_result_count
+        )
         agent_correct += int(correct)
         sparql_ms += _query_ms(service.agent, q)
 
         row = {
             "question": q,
+            "expected_intent": expected_intent,
             "expected_ids": sorted(expected),
             "agent_result_ids_found": sorted(expected & _ids(result)),
             "agent_correct": correct,
@@ -54,7 +65,9 @@ def run_evaluation(service):
 
         if cypher is not None:
             c_result = cypher.ask(q)
-            c_correct = _correct(expected, c_result)
+            c_correct = _correct(
+                expected, c_result, expected_intent, expected_result_count
+            )
             cypher_correct += int(c_correct)
             cypher_ms += _query_ms(cypher, q)
             row["cypher_correct"] = c_correct

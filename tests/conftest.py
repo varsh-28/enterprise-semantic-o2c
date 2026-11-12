@@ -1,5 +1,10 @@
+import os
+
 import pytest
 from o2c.service import O2CService
+
+os.environ.setdefault("RETRIEVAL_MODE", "lexical")
+
 
 @pytest.fixture(scope="session")
 def service():

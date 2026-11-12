@@ -2,7 +2,7 @@ import os
 
 from neo4j import GraphDatabase
 
-from .graph import _read, find_customer_matches
+from .graph import find_customer_matches, load_source_data
 
 CONSTRAINTS = [
     "CREATE CONSTRAINT customer_id IF NOT EXISTS FOR (n:Customer) REQUIRE n.id IS UNIQUE",
@@ -85,12 +85,18 @@ class Neo4jStore:
         password = os.getenv("NEO4J_PASSWORD")
         if not password:
             raise RuntimeError("NEO4J_PASSWORD is not set")
-        return cls(
+        store = cls(
             os.getenv("NEO4J_URI", "bolt://localhost:7687"),
             os.getenv("NEO4J_USER", "neo4j"),
             password,
             os.getenv("NEO4J_DATABASE", "neo4j"),
         )
+        try:
+            store.driver.verify_connectivity()
+        except Exception:
+            store.close()
+            raise
+        return store
 
     def close(self):
         self.driver.close()
@@ -107,14 +113,15 @@ class Neo4jStore:
         self._write("MATCH (n) DETACH DELETE n")
 
     def load(self, reset=True):
+        tables = load_source_data()
         if reset:
             self.reset()
-        customers = _read("customers.csv")
+        customers = tables["customers.csv"]
         self._write(LOAD_CUSTOMERS, rows=customers.to_dict("records"))
-        self._write(LOAD_ORDERS, rows=_read("orders.csv").to_dict("records"))
-        self._write(LOAD_DELIVERIES, rows=_read("deliveries.csv").to_dict("records"))
-        self._write(LOAD_INVOICES, rows=_read("invoices.csv").to_dict("records"))
-        self._write(LOAD_PAYMENTS, rows=_read("payments.csv").to_dict("records"))
+        self._write(LOAD_ORDERS, rows=tables["orders.csv"].to_dict("records"))
+        self._write(LOAD_DELIVERIES, rows=tables["deliveries.csv"].to_dict("records"))
+        self._write(LOAD_INVOICES, rows=tables["invoices.csv"].to_dict("records"))
+        self._write(LOAD_PAYMENTS, rows=tables["payments.csv"].to_dict("records"))
 
         pairs = []
         for group in find_customer_matches(customers.to_dict("records")):

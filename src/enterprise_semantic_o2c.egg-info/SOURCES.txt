@@ -3,6 +3,7 @@ pyproject.toml
 src/enterprise_semantic_o2c.egg-info/PKG-INFO
 src/enterprise_semantic_o2c.egg-info/SOURCES.txt
 src/enterprise_semantic_o2c.egg-info/dependency_links.txt
+src/enterprise_semantic_o2c.egg-info/requires.txt
 src/enterprise_semantic_o2c.egg-info/top_level.txt
 src/o2c/__init__.py
 src/o2c/agent.py
@@ -18,5 +19,9 @@ src/o2c/service.py
 tests/test_agent.py
 tests/test_api.py
 tests/test_cypher_safety.py
+tests/test_data_validation.py
+tests/test_evaluation.py
 tests/test_graph.py
 tests/test_neo4j_integration.py
+tests/test_retrieval.py
+tests/test_service.py

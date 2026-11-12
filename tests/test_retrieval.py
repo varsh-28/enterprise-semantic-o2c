@@ -27,3 +27,54 @@ def test_semantic_initialization_failure_is_reported(monkeypatch, caplog):
     assert retriever.mode == "lexical"
     assert retriever.fallback_reason == "ImportError: model dependency unavailable"
     assert "using lexical retrieval" in caplog.text
+
+
+def test_lexical_retrieval_normalizes_question_words_and_prioritizes_status():
+    retriever = EvidenceRetriever(
+        [
+            "invoice INV-9001 status paid",
+            "invoice INV-9002 status overdue",
+            "invoice INV-9004 status overdue",
+            "invoice INV-9002 amount 8400.00",
+        ],
+        mode="lexical",
+    )
+
+    results = retriever.search("Which invoice is overdue?")
+
+    assert [item["text"] for item in results[:2]] == [
+        "invoice INV-9002 status overdue",
+        "invoice INV-9004 status overdue",
+    ]
+    assert len(results) == 2
+    assert all(item["score"] == 1 for item in results)
+
+
+def test_lexical_retrieval_omits_zero_score_unrelated_chunks():
+    retriever = EvidenceRetriever(
+        ["invoice INV-9001 status paid", "customer C100 name Northwind"],
+        mode="lexical",
+    )
+
+    assert retriever.search("What is the weather today?") == []
+
+
+def test_unpaid_invoice_query_retrieves_overdue_invoice_evidence(service):
+    results = service.retriever.search("List unpaid invoices")
+
+    assert results
+    assert all("overdue" in item["text"].lower() for item in results)
+    assert {item["text"].split()[1] for item in results} == {
+        "INV-9002",
+        "INV-9004",
+    }
+
+
+def test_payment_records_query_retrieves_payment_evidence(service):
+    results = service.retriever.search("List payment records")
+
+    assert results
+    assert all(item["text"].lower().startswith("payment ") for item in results)
+    assert {
+        item["text"].split()[1] for item in results
+    } == {"PAY-7001", "PAY-7002", "PAY-7003"}

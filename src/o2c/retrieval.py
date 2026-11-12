@@ -1,8 +1,33 @@
 import logging
 import os
+import re
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+_STOP_WORDS = {
+    "a", "an", "and", "are", "do", "does", "for", "how", "is", "list",
+    "me", "of", "please", "record", "records", "show", "the", "their",
+    "today", "what", "which", "who", "with",
+}
+_TERM_SYNONYMS = {
+    "late": "overdue",
+    "unpaid": "overdue",
+}
+
+
+def _lexical_terms(text):
+    terms = set()
+    for token in re.findall(r"[a-z0-9]+", text.lower()):
+        if token in _STOP_WORDS:
+            continue
+        if len(token) > 4 and token.endswith("ies"):
+            token = f"{token[:-3]}y"
+        elif len(token) > 3 and token.endswith("s") and not token.endswith("ss"):
+            token = token[:-1]
+        token = _TERM_SYNONYMS.get(token, token)
+        terms.add(token)
+    return terms
 
 
 class EvidenceRetriever:
@@ -44,10 +69,31 @@ class EvidenceRetriever:
             scores, ids = self.index.search(np.asarray(q, dtype="float32"), k)
             return [{"text": self.chunks[int(i)], "score": float(s)}
                     for s, i in zip(scores[0], ids[0]) if int(i) >= 0]
-        terms = set(query.lower().split())
+        terms = _lexical_terms(query)
+        if not terms:
+            return []
+
         ranked = []
         for chunk in self.chunks:
-            words = set(chunk.lower().split())
+            words = _lexical_terms(chunk)
             score = len(terms & words) / max(1, len(terms))
-            ranked.append({"text": chunk, "score": score})
-        return sorted(ranked, key=lambda x: x["score"], reverse=True)[:k]
+            if score > 0:
+                ranked.append({"text": chunk, "score": score})
+        if not ranked:
+            return []
+
+        ranked.sort(key=lambda item: (-item["score"], item["text"]))
+        minimum_score = max(0.5, ranked[0]["score"] * 0.8)
+        results = []
+        seen_entities = set()
+        for item in ranked:
+            if item["score"] < minimum_score:
+                continue
+            entity = tuple(item["text"].split()[:2])
+            if entity in seen_entities:
+                continue
+            seen_entities.add(entity)
+            results.append(item)
+            if len(results) == k:
+                break
+        return results

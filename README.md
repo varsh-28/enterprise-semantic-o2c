@@ -30,7 +30,7 @@ A runnable portfolio project that unifies synthetic SAP-, Salesforce-, and Servi
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+python -m pip install -e ".[dev,semantic,neo4j]"
 python -m pytest -q
 ```
 
@@ -46,7 +46,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+python -m pip install -e ".[dev,semantic,neo4j]"
 python -m pytest -q
 ```
 
@@ -58,6 +58,16 @@ uvicorn o2c.api:app --reload
 ```
 
 Open `http://127.0.0.1:8000/docs`.
+
+The API initializes the graph and retrieval service during startup and closes the optional Neo4j driver during shutdown. `GET /health` reports graph validation, retrieval mode/fallback reason, and whether Neo4j is enabled; it returns HTTP 503 if SHACL validation does not conform.
+
+### Input data validation
+
+Both RDF graph construction and the Neo4j loader validate all five CSV files before loading any records. Validation checks required columns and values, duplicate entity/source-record IDs, decimal amounts, ISO dates, and foreign-key references. Invalid input raises an error identifying the CSV file and row rather than silently dropping or partially loading records.
+
+### Continuous integration
+
+GitHub Actions runs the pytest suite with coverage reporting on Python 3.10, 3.11, and 3.12 using lexical retrieval so CI does not download the embedding model. A separate CI job starts Neo4j, loads the synthetic graph, and runs RDF/Cypher integration checks.
 
 ### Optional Neo4j backend
 
@@ -145,8 +155,8 @@ CSV records (SAP / Salesforce / ServiceNow style)
 1. **Synthetic data only.** The source files are fictional examples, not actual SAP/Salesforce/ServiceNow exports.
 2. **Explainability.** Answers include source entity IDs and evidence records.
 3. **SPARQL safety.** User text maps to a small set of supported query intents. The API does not run arbitrary SPARQL from user input.
-4. **Offline fallback.** If `sentence-transformers` or FAISS cannot be installed on a platform, set `RETRIEVAL_MODE=lexical`. The API health endpoint reports the active retrieval mode and any reason semantic retrieval fell back. The default `requirements.txt` installs the complete semantic stack; install the base project with `python -m pip install -e .` if you want to omit optional backends.
-5. **Evaluation honesty.** `POST /evaluate` reports expected-ID match and evidence coverage against `evaluation/questions.json`; it is a smoke-test benchmark, not a statistically significant research result.
+4. **Offline fallback.** If `sentence-transformers` or FAISS cannot be installed on a platform, set `RETRIEVAL_MODE=lexical`. Lexical retrieval normalizes punctuation/plurals, supports a small set of business synonyms (such as unpaid/overdue), omits weak matches, and returns at most one chunk per entity. The API health endpoint reports the active retrieval mode and any reason semantic retrieval fell back. Install the base project with `python -m pip install -e .` if you want to omit optional backends.
+5. **Evaluation honesty.** `POST /evaluate` reports expected intent/ID/result-count accuracy and evidence coverage against `evaluation/questions.json`; it is a small synthetic smoke-test benchmark, not a statistically significant research result.
 6. **Cypher safety.** The optional Neo4j agent executes fixed query templates, validates labels and relationships, enforces a result limit, and uses a read-only database session. It does not execute arbitrary Cypher from user input.
 
 ## Extend to real LLM-generated SPARQL

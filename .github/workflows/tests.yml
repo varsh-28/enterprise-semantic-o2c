@@ -1,0 +1,60 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Run tests
+        env:
+          RETRIEVAL_MODE: lexical
+        run: python -m pytest --cov=o2c --cov-report=term-missing
+
+  neo4j-integration:
+    runs-on: ubuntu-latest
+    services:
+      neo4j:
+        image: neo4j:5-community
+        env:
+          NEO4J_AUTH: neo4j/ci-password
+        ports:
+          - 7687:7687
+        options: >-
+          --health-cmd "cypher-shell -u neo4j -p ci-password 'RETURN 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install project and Neo4j test dependencies
+        run: python -m pip install -e ".[dev,neo4j]"
+      - name: Load test graph into Neo4j
+        env:
+          NEO4J_PASSWORD: ci-password
+        run: python scripts/load_neo4j.py
+      - name: Compare RDF and Neo4j answers
+        env:
+          NEO4J_PASSWORD: ci-password
+          O2C_ENABLE_NEO4J: "1"
+          RETRIEVAL_MODE: lexical
+        run: python -m pytest tests/test_neo4j_integration.py -q

@@ -1,6 +1,6 @@
 import os
 
-from .graph import build_graph, validate_graph, O2C
+from .graph import build_graph, validate_graph
 from .retrieval import EvidenceRetriever
 from .agent import O2CAgent
 from .baseline import PlainRAGBaseline
@@ -34,3 +34,7 @@ class O2CService:
             self.cypher_agent = CypherAgent(
                 self.neo4j.driver, self.retriever, self.neo4j.database
             )
+
+    def close(self):
+        if self.neo4j is not None:
+            self.neo4j.close()

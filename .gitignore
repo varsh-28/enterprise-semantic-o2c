@@ -1,6 +1,7 @@
 .venv/
 __pycache__/
 .pytest_cache/
+.coverage
 *.py[cod]
 .env
 o2c_graph.ttl

@@ -1,6 +1,4 @@
-from o2c.graph import build_graph, validate_graph
-
-from o2c.graph import find_customer_matches
+from o2c.graph import build_graph, find_customer_matches, validate_graph
 
 
 def test_find_customer_matches_normalizes_names():
