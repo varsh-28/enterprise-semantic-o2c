@@ -8,7 +8,11 @@ ROOT = Path(__file__).resolve().parents[2]
 def _ids(result):
     found = set()
     for row in result["results"]:
-        found.update(row.values())
+        found.update(
+            value
+            for key, value in row.items()
+            if key.lower().endswith("id")
+        )
     return found
 
 

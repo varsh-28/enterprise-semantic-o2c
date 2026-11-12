@@ -1,15 +1,21 @@
-from pathlib import Path
+import logging
 import os
 import numpy as np
+
+logger = logging.getLogger(__name__)
+
 
 class EvidenceRetriever:
     """Semantic retrieval with FAISS; lexical fallback is available for constrained environments."""
     def __init__(self, chunks, mode=None, model_name=None):
         self.chunks = chunks
         self.mode = (mode or os.getenv("RETRIEVAL_MODE", "semantic")).lower()
+        if self.mode not in {"semantic", "lexical"}:
+            raise ValueError("retrieval mode must be 'semantic' or 'lexical'")
         self.index = None
         self.model = None
         self.matrix = None
+        self.fallback_reason = None
         if self.mode == "semantic":
             try:
                 from sentence_transformers import SentenceTransformer
@@ -21,8 +27,12 @@ class EvidenceRetriever:
                 self.matrix = np.asarray(vectors, dtype="float32")
                 self.index = faiss.IndexFlatIP(self.matrix.shape[1])
                 self.index.add(self.matrix)
-            except Exception:
-                # Network/model-download issues should not prevent API startup.
+            except Exception as exc:
+                self.fallback_reason = f"{type(exc).__name__}: {exc}"
+                logger.warning(
+                    "Semantic retrieval initialization failed; using lexical retrieval: %s",
+                    self.fallback_reason,
+                )
                 self.mode = "lexical"
 
     def search(self, query, k=4):

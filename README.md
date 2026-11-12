@@ -31,7 +31,6 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python -m pip install -e .
 python -m pytest -q
 ```
 
@@ -48,7 +47,6 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python -m pip install -e .
 python -m pytest -q
 ```
 
@@ -147,8 +145,8 @@ CSV records (SAP / Salesforce / ServiceNow style)
 1. **Synthetic data only.** The source files are fictional examples, not actual SAP/Salesforce/ServiceNow exports.
 2. **Explainability.** Answers include source entity IDs and evidence records.
 3. **SPARQL safety.** User text maps to a small set of supported query intents. The API does not run arbitrary SPARQL from user input.
-4. **Offline fallback.** If `sentence-transformers` or FAISS cannot be installed on a platform, use `retrieval_mode="lexical"` when creating `O2CService`, or run tests that don't require the optional retrieval stack. The main requirements include both libraries for the intended full experience.
-5. **Evaluation honesty.** `evaluation/run_eval.py` reports exact expected-ID match and answer coverage for a small illustrative dataset; it is a smoke-test benchmark, not a statistically significant research result.
+4. **Offline fallback.** If `sentence-transformers` or FAISS cannot be installed on a platform, set `RETRIEVAL_MODE=lexical`. The API health endpoint reports the active retrieval mode and any reason semantic retrieval fell back. The default `requirements.txt` installs the complete semantic stack; install the base project with `python -m pip install -e .` if you want to omit optional backends.
+5. **Evaluation honesty.** `POST /evaluate` reports expected-ID match and evidence coverage against `evaluation/questions.json`; it is a smoke-test benchmark, not a statistically significant research result.
 6. **Cypher safety.** The optional Neo4j agent executes fixed query templates, validates labels and relationships, enforces a result limit, and uses a read-only database session. It does not execute arbitrary Cypher from user input.
 
 ## Extend to real LLM-generated SPARQL

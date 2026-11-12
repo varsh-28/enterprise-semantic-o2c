@@ -1,8 +1,12 @@
 from functools import lru_cache
+import logging
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from .service import O2CService
 from .evaluation import run_evaluation
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Enterprise Semantic Layer for Order-to-Cash",
@@ -22,7 +26,8 @@ def health():
     service = get_service()
     return {"status": "ok", "graph_triples": len(service.graph),
             "shacl_conforms": service.validation["conforms"],
-            "retrieval_mode": service.retriever.mode}
+            "retrieval_mode": service.retriever.mode,
+            "retrieval_fallback_reason": service.retriever.fallback_reason}
 
 @app.post("/ask/cypher")
 def ask_cypher(request: AskRequest):
@@ -35,6 +40,7 @@ def ask_cypher(request: AskRequest):
     try:
         return agent.ask(request.question)
     except Exception as exc:
+        logger.exception("Question processing failed in /ask/cypher")
         raise HTTPException(status_code=500, detail=f"Question processing failed: {type(exc).__name__}")
 @app.get("/validation")
 def validation():
@@ -45,6 +51,7 @@ def ask(request: AskRequest):
     try:
         return get_service().agent.ask(request.question)
     except Exception as exc:
+        logger.exception("Question processing failed in /ask")
         raise HTTPException(status_code=500, detail=f"Question processing failed: {type(exc).__name__}")
 
 @app.post("/baseline")

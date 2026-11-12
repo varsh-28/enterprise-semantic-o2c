@@ -13,3 +13,10 @@ def test_answer_has_traceable_evidence(service):
     result = service.agent.ask("Which invoices are overdue?")
     assert "evidence" in result
     assert "method" in result
+
+def test_customer_orders_include_customer_ids(service):
+    result = service.agent.ask("Show customer orders")
+    assert any(
+        row["customerId"] == "C100" and row["orderId"] == "SO-1001"
+        for row in result["results"]
+    )

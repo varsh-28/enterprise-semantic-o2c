@@ -8,10 +8,15 @@ src/o2c/__init__.py
 src/o2c/agent.py
 src/o2c/api.py
 src/o2c/baseline.py
+src/o2c/cypher_agent.py
+src/o2c/cypher_safety.py
 src/o2c/evaluation.py
 src/o2c/graph.py
+src/o2c/neo4j_store.py
 src/o2c/retrieval.py
 src/o2c/service.py
 tests/test_agent.py
 tests/test_api.py
+tests/test_cypher_safety.py
 tests/test_graph.py
+tests/test_neo4j_integration.py

@@ -65,12 +65,13 @@ SELECT ?deliveryId ?status ?plannedDate ?orderId WHERE {
 
         if intent == "customer_orders":
             return PREFIXES + """
-SELECT ?customerName ?orderId ?status ?amount WHERE {
+SELECT ?customerId ?customerName ?orderId ?status ?amount WHERE {
  ?o a o2c:SalesOrder ;
     o2c:externalId ?orderId ;
     o2c:status ?status ;
     o2c:amount ?amount ;
     o2c:hasCustomer ?c .
+ ?c o2c:externalId ?customerId .
  ?c o2c:name ?customerName .
 } ORDER BY ?customerName"""
 

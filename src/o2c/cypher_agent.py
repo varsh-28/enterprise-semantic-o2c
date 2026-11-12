@@ -20,7 +20,7 @@ RETURN d.id AS deliveryId, d.status AS status, toString(d.plannedDate) AS planne
 ORDER BY d.plannedDate""",
     "customer_orders": """
 MATCH (o:SalesOrder)-[:HAS_CUSTOMER]->(c:Customer)
-RETURN c.name AS customerName, o.id AS orderId, o.status AS status,
+RETURN c.id AS customerId, c.name AS customerName, o.id AS orderId, o.status AS status,
        toString(o.amount) AS amount
 ORDER BY c.name""",
     "invoice_orders": """
